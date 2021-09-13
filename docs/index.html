@@ -48,166 +48,166 @@
       <center><canvas ref="canvas"></canvas></center>
     </main>
   </div>
-</body>
-<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/gantt@3.1.1/dist/gantt.min.js"></script>
-<script>
-  const Bar = {
-    group: function (id, text, start, end, percent, links) {
-      start = new Date(start);
-      end = new Date(end);
-      return { type: "group", id, text, start, end, percent, links }
-    },
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gantt@3.1.1/dist/gantt.min.js"></script>
+  <script>
+    const Bar = {
+      group: function (id, text, start, end, percent, links) {
+        start = new Date(start);
+        end = new Date(end);
+        return { type: "group", id, text, start, end, percent, links }
+      },
 
-    task: function (id, text, start, end, percent, links) {
-      start = new Date(start);
-      end = new Date(end);
-      return { id, text, start, end, percent, links }
-    },
+      task: function (id, text, start, end, percent, links) {
+        start = new Date(start);
+        end = new Date(end);
+        return { id, text, start, end, percent, links }
+      },
 
-    milestone: function (id, text, date, links) {
-      let start = new Date(date);
-      let end = new Date(date);
-      return { type: "milestone", id: id, text: text, start, end, links }
-    }
-  }
-
-  const Parser = {
-    advance: function (inputData) {
-      const bars = [];
-      inputData.split("\n").forEach(line => {
-        try {
-          let fn = Function("o", "with(o){ return " + line + " }").bind(Bar, Bar)
-          let obj = fn();
-          if (obj) bars.push(obj);
-        } catch (e) {
-          console.log(e)
-        }
-      });
-      return bars;
-    },
-
-    simple: function (inputData) {
-      function insert(fn, line) {
-        var args = line.substring(1).split(";");
-        args.unshift(bars.length);
-        bars.push(fn.apply(null, args));
+      milestone: function (id, text, date, links) {
+        let start = new Date(date);
+        let end = new Date(date);
+        return { type: "milestone", id: id, text: text, start, end, links }
       }
-
-      const bars = [];
-      inputData.split("\n").forEach(line => {
-        switch (line.trim().charAt(0)) {
-          case "+":
-            insert(Bar.group, line);
-            break
-          case "-":
-            insert(Bar.task, line);
-            break
-          case "*":
-            insert(Bar.milestone, line);
-            break
-        }
-      });
-      return bars;
     }
-  }
 
-  const lineTextColor = {
-    bgColor: '#fff',
-    lineColor: '#e0e0e0',
-    textColor: '#000',
-    lightTextColor: '#393939',
-  }
+    const Parser = {
+      advance: function (inputData) {
+        const bars = [];
+        inputData.split("\n").forEach(line => {
+          try {
+            let fn = Function("o", "with(o){ return " + line + " }").bind(Bar, Bar)
+            let obj = fn();
+            if (obj) bars.push(obj);
+          } catch (e) {
+            console.log(e)
+          }
+        });
+        return bars;
+      },
 
-  const blueOptions = {
-    redLineColor: '#f1c21b',
-    groupBack: '#0f62fe',
-    groupFront: '#002d9c',
-    taskBack: '#4589ff',
-    taskFront: '#0043ce',
-    milestone: '#001d6c',
-    warning: '#ff832b',
-    danger: '#da1e28',
-    link: '#a6c8ff',
-  }
+      simple: function (inputData) {
+        function insert(fn, line) {
+          var args = line.substring(1).split(";");
+          args.unshift(bars.length);
+          bars.push(fn.apply(null, args));
+        }
 
-  const greenOptions = {
-    redLineColor: '#f1c21b',
-    groupBack: '#198038',
-    groupFront: '#044317',
-    taskBack: '#24a148',
-    taskFront: '#0e6027',
-    milestone: '#022d0d',
-    warning: '#ff832b',
-    danger: '#da1e28',
-    link: '#6fdc8c',
-  }
+        const bars = [];
+        inputData.split("\n").forEach(line => {
+          switch (line.trim().charAt(0)) {
+            case "+":
+              insert(Bar.group, line);
+              break
+            case "-":
+              insert(Bar.task, line);
+              break
+            case "*":
+              insert(Bar.milestone, line);
+              break
+          }
+        });
+        return bars;
+      }
+    }
 
-  const dataVizOptions = {
-    redLineColor: '#de425b',
-    groupBack: '#a0c19c',
-    groupFront: '#4f9a78',
-    taskBack: '#c3d5b4',
-    taskFront: '#7aae88',
-    milestone: '#488f31',
-    warning: '#e18b63',
-    danger: '#dc6755',
-    link: '#e9ca9c',
-  }
+    const lineTextColor = {
+      bgColor: '#fff',
+      lineColor: '#e0e0e0',
+      textColor: '#000',
+      lightTextColor: '#393939',
+    }
 
-  const styles = {
-    Blue: { ...blueOptions, ...lineTextColor },
-    Green: { ...greenOptions, ...lineTextColor },
-    DataViz: { ...dataVizOptions, ...lineTextColor },
-    Default: {}
-  }
+    const blueOptions = {
+      redLineColor: '#f1c21b',
+      groupBack: '#0f62fe',
+      groupFront: '#002d9c',
+      taskBack: '#4589ff',
+      taskFront: '#0043ce',
+      milestone: '#001d6c',
+      warning: '#ff832b',
+      danger: '#da1e28',
+      link: '#a6c8ff',
+    }
 
-  const textData = `\
+    const greenOptions = {
+      redLineColor: '#f1c21b',
+      groupBack: '#198038',
+      groupFront: '#044317',
+      taskBack: '#24a148',
+      taskFront: '#0e6027',
+      milestone: '#022d0d',
+      warning: '#ff832b',
+      danger: '#da1e28',
+      link: '#6fdc8c',
+    }
+
+    const dataVizOptions = {
+      redLineColor: '#de425b',
+      groupBack: '#a0c19c',
+      groupFront: '#4f9a78',
+      taskBack: '#c3d5b4',
+      taskFront: '#7aae88',
+      milestone: '#488f31',
+      warning: '#e18b63',
+      danger: '#dc6755',
+      link: '#e9ca9c',
+    }
+
+    const styles = {
+      Blue: { ...blueOptions, ...lineTextColor },
+      Green: { ...greenOptions, ...lineTextColor },
+      DataViz: { ...dataVizOptions, ...lineTextColor },
+      Default: {}
+    }
+
+    const textData = `\
 + 1 Waterfall model Waterfall model; 2021-08-19; 2021-11-12; 0.1
 - 1.1 Requirements; 2021-08-21; 2021-09-29; 0.29
 * milestone1; 2021-09-29
 `
 
-  new Vue({
-    el: '#app',
-    data: {
-      viewMode: 'week',
-      showLinks: false,
-      showDelay: false,
-      advanceMode: false,
-      styleOptions: 'Blue',
-      styles,
-      textData
-    },
-    computed: {
-      objData: function () {
-        if (this.advanceMode) {
-          return Parser.advance(this.textData);
-        } else {
-          return Parser.simple(this.textData);
+    new Vue({
+      el: '#app',
+      data: {
+        viewMode: 'week',
+        showLinks: false,
+        showDelay: false,
+        advanceMode: false,
+        styleOptions: 'Blue',
+        styles,
+        textData
+      },
+      computed: {
+        objData: function () {
+          if (this.advanceMode) {
+            return Parser.advance(this.textData);
+          } else {
+            return Parser.simple(this.textData);
+          }
+        },
+        options: function () {
+          return {
+            viewMode: this.viewMode,
+            showLinks: this.showLinks,
+            showDelay: this.showDelay,
+            styleOptions: this.styles[this.styleOptions]
+          }
         }
       },
-      options: function () {
-        return {
-          viewMode: this.viewMode,
-          showLinks: this.showLinks,
-          showDelay: this.showDelay,
-          styleOptions: this.styles[this.styleOptions]
+      watch: {
+        objData: function () {
+          this.$refs.canvas.setData(this.objData)
+        },
+        options: function () {
+          this.$refs.canvas.setOptions(this.options)
         }
-      }
-    },
-    watch: {
-      objData: function () {
-        this.$refs.canvas.setData(this.objData)
       },
-      options: function () {
-        this.$refs.canvas.setOptions(this.options)
+      mounted: function () {
+        this.$refs.canvas = new Gantt.CanvasGantt(this.$refs.canvas, this.objData, this.options)
       }
-    },
-    mounted: function () {
-      this.$refs.canvas = new Gantt.CanvasGantt(this.$refs.canvas, this.objData, this.options)
-    }
-  })
-</script>
+    })
+  </script>
+</body>
 
 </html>
