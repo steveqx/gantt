@@ -9,199 +9,205 @@
 </head>
 
 <body style="padding-top: 350px;">
-  <nav class="navbar navbar-light bg-light fixed-top shadow-sm">
-    <div class="container mb-2 ">
-      <span class="navbar-brand h1">Gantt Chart Builder</span>
-      <form class="row row-cols-auto align-items-center">
-        <div class="form-check col">
-          <input class="form-check-input" type="checkbox" id="advanceMode">
-          <label class="form-check-label" for="advanceMode">Advance Mode</label>
-        </div>
-        <div class="form-check col">
-          <input class="form-check-input" type="checkbox" id="showLinks">
-          <label class="form-check-label" for="showLinks">Show Links</label>
-        </div>
-        <div class="form-check col">
-          <input class="form-check-input" type="checkbox" id="showDelay">
-          <label class="form-check-label" for="showDelay">Show Delay</label>
-        </div>
-        <div class="col">
-          <select id="styleOptions" class="form-select form-select-sm">
-            <option selected>Blue</option>
-            <option>Green</option>
-            <option>DataViz</option>
-            <option>Default</option>
-          </select>
-        </div>
-        <div class="col">
-          <select id="viewMode" class="form-select form-select-sm">
-            <option value="day">Day</option>
-            <option value="week" selected>Week</option>
-            <option value="month">Month</option>
-          </select>
-        </div>
-      </form>
-    </div>
-    <div class="container mb-2">
-      <textarea id="inputData" class="form-control" rows="10">
-+ 1 Waterfall model Waterfall model; 2021-08-19; 2021-11-12; 0.1
-- 1.1 Requirements; 2021-08-21; 2021-09-29; 0.29
-* milestone1; 2021-09-29  
-</textarea>
-    </div>
-  </nav>
-  <main class="container-fluid">
-    <center><canvas id="canvas"></canvas></center>
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/gantt@3.1.1/dist/gantt.min.js"></script>
-  <script>
-    "use strict";
-
-    let group = function (id, text, start, end, percent, links) {
+  <div id="app">
+    <nav class="navbar navbar-light bg-light fixed-top shadow-sm">
+      <div class="container mb-2 ">
+        <span class="navbar-brand h1">Gantt Chart Builder</span>
+        <form class="row row-cols-auto align-items-center">
+          <div class="form-check col">
+            <input class="form-check-input" type="checkbox" v-model="advanceMode">
+            <label class="form-check-label" for="advanceMode">Advance Mode</label>
+          </div>
+          <div class="form-check col">
+            <input class="form-check-input" type="checkbox" v-model="showLinks">
+            <label class="form-check-label" for="showLinks">Show Links</label>
+          </div>
+          <div class="form-check col">
+            <input class="form-check-input" type="checkbox" v-model="showDelay">
+            <label class="form-check-label" for="showDelay">Show Delay</label>
+          </div>
+          <div class="col">
+            <select v-model="styleOptions" class="form-select form-select-sm">
+              <option v-for="(value, name) in styles">{{ name }}</option>
+            </select>
+          </div>
+          <div class="col">
+            <select v-model="viewMode" class="form-select form-select-sm">
+              <option value="day">Day</option>
+              <option value="week" selected>Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="container mb-2">
+        <textarea class="form-control" rows="10" v-model="textData"></textarea>
+      </div>
+    </nav>
+    <main class="container-fluid">
+      <center><canvas ref="canvas"></canvas></center>
+    </main>
+  </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/gantt@3.1.1/dist/gantt.min.js"></script>
+<script>
+  const Bar = {
+    group: function (id, text, start, end, percent, links) {
       start = new Date(start);
       end = new Date(end);
       return { type: "group", id, text, start, end, percent, links }
-    }
-    let task = function (id, text, start, end, percent, links) {
+    },
+
+    task: function (id, text, start, end, percent, links) {
       start = new Date(start);
       end = new Date(end);
       return { id, text, start, end, percent, links }
-    }
-    let milestone = function (id, text, date, links) {
+    },
+
+    milestone: function (id, text, date, links) {
       let start = new Date(date);
       let end = new Date(date);
       return { type: "milestone", id: id, text: text, start, end, links }
     }
+  }
 
-    let Parser = {
-      parse: function (inputData, advanceMode) {
-        if (advanceMode) {
-          return Parser.advance(inputData);
-        } else {
-          return Parser.simple(inputData);
+  const Parser = {
+    advance: function (inputData) {
+      const bars = [];
+      inputData.split("\n").forEach(line => {
+        try {
+          let fn = Function("o", "with(o){ return " + line + " }").bind(Bar, Bar)
+          let obj = fn();
+          if (obj) bars.push(obj);
+        } catch (e) {
+          console.log(e)
         }
-      },
-      advance: function (inputData) {
-        const tasks = [];
-        inputData.split("\n").forEach(line => {
-          try {
-            let obj = Function("return " + line)();
-            if (obj) tasks.push(obj);
-          } catch (e) {
-            console.log(e)
-          }
-        });
-        return tasks;
-      },
+      });
+      return bars;
+    },
 
-      simple: function (inputData) {
-        function insert(fun, line) {
-          var args = line.substring(1).split(";");
-          args.unshift(tasks.length);
-          tasks.push(fun.apply(null, args));
-        }
-
-        const tasks = [];
-        inputData.split("\n").forEach(line => {
-          switch (line.trim().charAt(0)) {
-            case "+":
-              insert(group, line);
-              break
-            case "-":
-              insert(task, line);
-              break
-            case "*":
-              insert(milestone, line);
-              break
-          }
-        });
-        return tasks;
+    simple: function (inputData) {
+      function insert(fn, line) {
+        var args = line.substring(1).split(";");
+        args.unshift(bars.length);
+        bars.push(fn.apply(null, args));
       }
+
+      const bars = [];
+      inputData.split("\n").forEach(line => {
+        switch (line.trim().charAt(0)) {
+          case "+":
+            insert(Bar.group, line);
+            break
+          case "-":
+            insert(Bar.task, line);
+            break
+          case "*":
+            insert(Bar.milestone, line);
+            break
+        }
+      });
+      return bars;
     }
+  }
 
-    const lineTextColor = {
-      bgColor: '#fff',
-      lineColor: '#e0e0e0',
-      textColor: '#000',
-      lightTextColor: '#393939',
+  const lineTextColor = {
+    bgColor: '#fff',
+    lineColor: '#e0e0e0',
+    textColor: '#000',
+    lightTextColor: '#393939',
+  }
+
+  const blueOptions = {
+    redLineColor: '#f1c21b',
+    groupBack: '#0f62fe',
+    groupFront: '#002d9c',
+    taskBack: '#4589ff',
+    taskFront: '#0043ce',
+    milestone: '#001d6c',
+    warning: '#ff832b',
+    danger: '#da1e28',
+    link: '#a6c8ff',
+  }
+
+  const greenOptions = {
+    redLineColor: '#f1c21b',
+    groupBack: '#198038',
+    groupFront: '#044317',
+    taskBack: '#24a148',
+    taskFront: '#0e6027',
+    milestone: '#022d0d',
+    warning: '#ff832b',
+    danger: '#da1e28',
+    link: '#6fdc8c',
+  }
+
+  const dataVizOptions = {
+    redLineColor: '#de425b',
+    groupBack: '#a0c19c',
+    groupFront: '#4f9a78',
+    taskBack: '#c3d5b4',
+    taskFront: '#7aae88',
+    milestone: '#488f31',
+    warning: '#e18b63',
+    danger: '#dc6755',
+    link: '#e9ca9c',
+  }
+
+  const styles = {
+    Blue: { ...blueOptions, ...lineTextColor },
+    Green: { ...greenOptions, ...lineTextColor },
+    DataViz: { ...dataVizOptions, ...lineTextColor },
+    Default: {}
+  }
+
+  const textData = `\
++ 1 Waterfall model Waterfall model; 2021-08-19; 2021-11-12; 0.1
+- 1.1 Requirements; 2021-08-21; 2021-09-29; 0.29
+* milestone1; 2021-09-29
+`
+
+  new Vue({
+    el: '#app',
+    data: {
+      viewMode: 'week',
+      showLinks: false,
+      showDelay: false,
+      advanceMode: false,
+      styleOptions: 'Blue',
+      styles,
+      textData
+    },
+    computed: {
+      objData: function () {
+        if (this.advanceMode) {
+          return Parser.advance(this.textData);
+        } else {
+          return Parser.simple(this.textData);
+        }
+      },
+      options: function () {
+        return {
+          viewMode: this.viewMode,
+          showLinks: this.showLinks,
+          showDelay: this.showDelay,
+          styleOptions: this.styles[this.styleOptions]
+        }
+      }
+    },
+    watch: {
+      objData: function () {
+        this.$refs.canvas.setData(this.objData)
+      },
+      options: function () {
+        this.$refs.canvas.setOptions(this.options)
+      }
+    },
+    mounted: function () {
+      this.$refs.canvas = new Gantt.CanvasGantt(this.$refs.canvas, this.objData, this.options)
     }
-
-    const blueOptions = {
-      redLineColor: '#f1c21b',
-      groupBack: '#0f62fe',
-      groupFront: '#002d9c',
-      taskBack: '#4589ff',
-      taskFront: '#0043ce',
-      milestone: '#001d6c',
-      warning: '#ff832b',
-      danger: '#da1e28',
-      link: '#a6c8ff',
-    }
-
-    const greenOptions = {
-      redLineColor: '#f1c21b',
-      groupBack: '#198038',
-      groupFront: '#044317',
-      taskBack: '#24a148',
-      taskFront: '#0e6027',
-      milestone: '#022d0d',
-      warning: '#ff832b',
-      danger: '#da1e28',
-      link: '#6fdc8c',
-    }
-
-    
-    const dataVizOptions = {
-      redLineColor: '#de425b',
-      groupBack: '#a0c19c',
-      groupFront: '#4f9a78',
-      taskBack: '#c3d5b4',
-      taskFront: '#7aae88',
-      milestone: '#488f31',
-      warning: '#e18b63',
-      danger: '#dc6755',
-      link: '#e9ca9c',
-    }
-
-    const styles = {
-      Blue: { ...blueOptions, ...lineTextColor},
-      Green: { ...greenOptions, ...lineTextColor},
-      DataViz: {...dataVizOptions, ...lineTextColor},
-      Default: {}
-    };
-
-    const $ = s => document.querySelector(s);
-    const data = Parser.parse($('#inputData').value, $('#advanceMode').checked);
-    const canvas = new Gantt.CanvasGantt('#canvas', data, {
-      viewMode: $('#viewMode').value,
-      showLinks: $('#showLinks').checked,
-      showDelay: $('#showDelay').checked,
-      styleOptions: styles[$('#styleOptions').value]
-    });
-
-    $('#inputData').onkeyup = e => {
-      const inputData = e.target.value;
-      const advanceMode = $('#advanceMode').checked;
-      const data = Parser.parse(inputData, advanceMode);
-      canvas.setData(data);
-    };
-    $('#showLinks').onchange = e => {
-      const showLinks = e.target.checked;
-      canvas.setOptions({ showLinks });
-    };
-    $('#showDelay').onchange = e => {
-      const showDelay = e.target.checked;
-      canvas.setOptions({ showDelay });
-    };
-    $('#viewMode').onchange = e => {
-      const viewMode = e.target.value;
-      canvas.setOptions({ viewMode });
-    };
-    $('#styleOptions').onchange = e => {
-      const style = e.target.value;
-      canvas.setOptions({styleOptions: styles[style]})
-    };
-  </script>
-</body>
+  })
+</script>
 
 </html>
